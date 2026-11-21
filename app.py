@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from database import database as db
-from modules import config as cfg, diagnostics, pipeline as pl
+from modules import config as cfg, diagnostics, procs as pl
 
 app = FastAPI(title="Clipper.fight")
 BASE = Path(__file__).parent
