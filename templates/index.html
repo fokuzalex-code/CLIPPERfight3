@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>Clipper.fight</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style type="text/tailwindcss">
+  @layer components {
+    .chip{@apply flex-1 min-h-[52px] px-3 rounded-2xl bg-zinc-900 border border-zinc-800 text-zinc-300 text-sm font-semibold text-center flex items-center justify-center active:scale-95 transition}
+    .chip.on{@apply bg-yellow-300 text-black border-yellow-300}
+    .btn{@apply min-h-[54px] px-5 rounded-2xl font-bold text-base flex items-center justify-center gap-2 active:scale-95 transition}
+    .btn-y{@apply bg-yellow-300 text-black}
+    .btn-g{@apply bg-zinc-800 text-white}
+    .inp{@apply w-full min-h-[52px] px-4 rounded-2xl bg-zinc-900 border border-zinc-800 text-white text-base outline-none focus:border-yellow-300}
+    .lbl{@apply block text-xs uppercase tracking-wider text-zinc-500 font-semibold mb-2 mt-5}
+    .card{@apply bg-zinc-950 border border-zinc-900 rounded-3xl overflow-hidden}
+    .tgl{@apply flex items-center justify-between min-h-[52px] px-4 rounded-2xl bg-zinc-900 border border-zinc-800 text-sm font-semibold}
+  }
+  body{background:#000;-webkit-tap-highlight-color:transparent}
+  body.soft{background:#121214}
+  .spin{width:22px;height:22px;border:3px solid #333;border-top-color:#ffe600;border-radius:50%;animation:s 1s linear infinite}
+  @keyframes s{to{transform:rotate(360deg)}}
+  #sheet{transition:transform .25s ease}
+  input[type=range]{accent-color:#ffe600;width:100%;height:36px}
+  input[type=checkbox]{width:26px;height:26px;accent-color:#ffe600}
+</style>
+</head>
+<body class="text-white font-sans min-h-screen pb-[env(safe-area-inset-bottom)]">
+
+<header class="sticky top-0 z-30 bg-black/85 backdrop-blur px-4 pt-[max(12px,env(safe-area-inset-top))] pb-3 flex items-center justify-between border-b border-zinc-900">
+  <div class="text-xl font-extrabold tracking-tight">Clipper<span class="text-yellow-300">.fight</span> 🥊</div>
+  <button id="btnSettings" class="w-12 h-12 rounded-full bg-zinc-900 text-2xl active:scale-90" aria-label="Ajustes">⚙️</button>
+</header>
+
+<nav class="sticky top-[73px] z-20 bg-black/90 backdrop-blur px-4 py-2 flex gap-2 max-w-xl mx-auto">
+  <button class="chip !min-h-[44px] on" data-tab="create">✂️ Crear</button>
+  <button class="chip !min-h-[44px]" data-tab="library">📚 Biblioteca</button>
+  <button class="chip !min-h-[44px]" data-tab="system">🩺 Sistema</button>
+</nav>
+
+<!-- HOME -->
+<main id="home" class="px-4 pb-32 max-w-xl mx-auto">
+  <label class="lbl">Fuente</label>
+  <div class="flex gap-2 mb-3">
+    <button class="chip on" data-src="url">🔗 URL de Kick</button>
+    <button class="chip" data-src="file">📁 Archivo</button>
+  </div>
+  <div id="srcUrl">
+    <input id="url" class="inp" inputmode="url" placeholder="https://kick.com/video/…">
+    <div class="text-xs text-zinc-500 mt-2">Desde el minuto <input id="startMin" type="number" min="0" value="0" class="inp !min-h-[40px] !w-24 inline-block ml-1"> (solo se descarga el tramo configurado)</div>
+  </div>
+  <div id="srcFile" class="hidden">
+    <input id="file" type="file" accept="video/mp4,video/x-matroska,.mkv,.mp4,.mov" class="hidden">
+    <button id="btnPick" class="btn btn-g w-full">Elegir video MP4/MKV</button>
+    <div id="upInfo" class="mt-3 hidden">
+      <div class="flex justify-between text-sm text-zinc-400 mb-1"><span id="upName" class="truncate pr-2"></span><span id="upPct">0%</span></div>
+      <div class="h-3 bg-zinc-900 rounded-full overflow-hidden"><div id="upBar" class="h-full bg-yellow-300 w-0"></div></div>
+    </div>
+  </div>
+
+  <label class="lbl">Duración de los clips</label>
+  <div class="flex gap-2" id="gDur">
+    <button class="chip" data-v="15-30">Cortos<br>15-30s</button>
+    <button class="chip" data-v="30-60">Estándar<br>30-60s</button>
+    <button class="chip" data-v="60-90">Largos<br>60-90s</button>
+  </div>
+
+  <label class="lbl">Layout 9:16</label>
+  <div class="grid grid-cols-2 gap-2" id="gLay">
+    <button class="chip" data-v="split">⬆️⬇️ Split cám/juego</button>
+    <button class="chip" data-v="cam">🎥 Cámara sola</button>
+    <button class="chip" data-v="podcast">🎙️ Podcast</button>
+    <button class="chip" data-v="original">🖼️ Original</button>
+  </div>
+
+  <label class="lbl">Cantidad de clips</label>
+  <div class="flex items-center gap-3">
+    <button class="btn btn-g w-16" id="cMinus">−</button>
+    <div id="cnt" class="flex-1 text-center text-3xl font-extrabold">10</div>
+    <button class="btn btn-g w-16" id="cPlus">+</button>
+  </div>
+
+  <label class="lbl">Marca de agua</label>
+  <input id="wmUser" class="inp" placeholder="Tu usuario de Kick (ej. fokuzrd)">
+
+  <label class="lbl">Opciones</label>
+  <div class="space-y-2">
+    <label class="tgl">Fondo difuminado <input type="checkbox" id="oBlur" checked></label>
+    <label class="tgl">Gancho de 2 segundos (texto) <input type="checkbox" id="oHook" checked></label>
+    <label class="tgl">Anti-muletillas <input type="checkbox" id="oFill" checked></label>
+    <label class="tgl">Barra de progreso <input type="checkbox" id="oBar" checked></label>
+    <label class="tgl">Stinger de 1 segundo <input type="checkbox" id="oSting"></label>
+    <label class="tgl opacity-50">Chat overlay (próximamente) <input type="checkbox" disabled></label>
+  </div>
+</main>
+
+<div id="homeBar" class="fixed bottom-0 inset-x-0 z-30 bg-gradient-to-t from-black via-black/95 to-transparent px-4 pt-6 pb-[max(16px,env(safe-area-inset-bottom))]">
+  <button id="btnGo" class="btn btn-y w-full max-w-xl mx-auto text-lg">⚡ Generar clips</button>
+</div>
+
+<!-- PROGRESO -->
+<main id="progress" class="hidden px-6 pt-24 max-w-xl mx-auto text-center">
+  <div class="spin mx-auto !w-12 !h-12"></div>
+  <div id="pMsg" class="mt-6 text-lg font-semibold">…</div>
+  <div class="h-4 bg-zinc-900 rounded-full overflow-hidden mt-5"><div id="pBar" class="h-full bg-yellow-300 transition-all" style="width:0"></div></div>
+  <div id="pPct" class="text-zinc-500 mt-2">0%</div>
+  <button id="btnCancel" class="btn btn-g mt-8 mx-auto">⛔ Cancelar trabajo</button>
+  <p class="text-zinc-600 text-xs mt-8">Puedes dejar esta pantalla abierta. Los clips aparecerán abajo conforme se rendericen.</p>
+</main>
+
+<!-- GALERÍA -->
+<main id="gallery" class="hidden px-3 pb-24 max-w-xl mx-auto">
+  <div class="flex items-center justify-between px-1 py-3 gap-2">
+    <div><div id="gTitle" class="font-extrabold text-lg">Tus clips</div><div id="gSub" class="text-xs text-zinc-500"></div></div>
+    <div class="flex gap-2">
+      <button id="btnCancel2" class="btn btn-g !min-h-[48px] !px-4 hidden">⛔ Cancelar</button>
+      <button id="btnNew" class="btn btn-g !min-h-[48px] !px-4">＋ Nuevo</button>
+      <a id="btnZip" class="btn btn-y !min-h-[48px] !px-4 hidden">⬇ ZIP</a>
+    </div>
+  </div>
+  <div id="gErr" class="hidden bg-red-950 border border-red-900 text-red-200 rounded-2xl p-4 mb-3 text-sm"></div>
+  <div id="list" class="space-y-5"></div>
+</main>
+
+<!-- BIBLIOTECA -->
+<main id="library" class="hidden px-4 pb-24 max-w-xl mx-auto">
+  <div class="flex gap-2 mt-3"><input id="libQ" class="inp" placeholder="🔍 Buscar por título o hashtag">
+    <select id="libL" class="inp !w-36"><option value="">Todos</option><option value="split">Split</option><option value="cam">Cámara</option><option value="podcast">Podcast</option><option value="original">Original</option></select></div>
+  <div id="libList" class="grid grid-cols-2 gap-3 mt-4"></div>
+  <div id="libEmpty" class="hidden text-center text-zinc-500 mt-16">Aún no hay clips guardados.</div>
+</main>
+
+<!-- SISTEMA -->
+<main id="system" class="hidden px-4 pb-24 max-w-xl mx-auto">
+  <div class="flex items-center justify-between mt-4"><div class="font-extrabold text-lg">🩺 Diagnóstico</div><button id="sysRef" class="btn btn-g !min-h-[44px] !px-4">Revisar</button></div>
+  <div id="sysSum" class="text-sm text-zinc-400 mt-1"></div>
+  <div id="sysList" class="space-y-2 mt-4"></div>
+</main>
+
+<!-- BOTTOM SHEET -->
+<div id="ov" class="fixed inset-0 bg-black/70 z-40 hidden"></div>
+<section id="sheet" class="fixed inset-x-0 bottom-0 z-50 bg-zinc-950 border-t border-zinc-800 rounded-t-[32px] max-h-[92vh] overflow-y-auto translate-y-full">
+  <div class="sticky top-0 bg-zinc-950 pt-3 pb-2 z-10"><div class="w-12 h-1.5 bg-zinc-700 rounded-full mx-auto"></div></div>
+  <div id="sheetBody" class="px-5 pb-[max(24px,env(safe-area-inset-bottom))] max-w-xl mx-auto"></div>
+</section>
+
+<div id="toast" class="fixed top-20 inset-x-0 z-[60] flex justify-center pointer-events-none opacity-0 transition"><div class="bg-white text-black px-5 py-3 rounded-full font-semibold text-sm shadow-xl" id="toastTxt"></div></div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
