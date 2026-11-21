@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: clipper-fight
+    runtime: docker
+    plan: standard          # mínimo recomendado: 2 GB RAM (Whisper + FFmpeg)
+    healthCheckPath: /health
+    envVars:
+      - key: DATA_DIR
+        value: /data
+      - key: OUTPUT_DIR
+        value: /data/output_clips
+    disk:
+      name: clipper-data
+      mountPath: /data
+      sizeGB: 20
